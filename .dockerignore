@@ -6,3 +6,16 @@ fly.toml
 /.cache
 /public/build
 /build
+.git
+.github
+test
+.claude
+.flox
+deno.lock
+*.md
+.prettierrc
+.licenserc.yaml
+.gitattributes
+playwright.config.ts
+eslint.config.mjs
+vercel.json

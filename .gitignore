@@ -24,3 +24,7 @@ build-archive.log
 test-results/
 
 .react-router/
+
+# Deno
+deno.lock
+rfd-server
