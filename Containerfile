@@ -1,9 +1,7 @@
-# syntax=docker/dockerfile:1
-
 # =============================================================================
 # Stage 1: Install npm dependencies and build the React Router app
 # =============================================================================
-FROM node:22-alpine AS builder
+FROM docker.io/node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -29,7 +27,7 @@ RUN npm run build
 # =============================================================================
 # Stage 2: Compile Deno server into standalone binary
 # =============================================================================
-FROM denoland/deno:2.1.10 AS compiler
+FROM docker.io/denoland/deno:2.6.4 AS compiler
 
 WORKDIR /app
 
@@ -57,15 +55,13 @@ RUN deno compile \
     --unstable-bare-node-builtins \
     --include=build \
     --output=rfd-server \
+    --allow-sys \
     server.ts
 
 # =============================================================================
-# Stage 3: Create minimal scratch image
+# Stage 3: Create minimal Alpine image
 # =============================================================================
-FROM scratch
-
-# Copy CA certificates for HTTPS requests to external APIs
-COPY --from=compiler /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+FROM docker.io/debian:12-slim
 
 # Copy the compiled binary (includes embedded static assets)
 COPY --from=compiler /app/rfd-server /rfd-server
