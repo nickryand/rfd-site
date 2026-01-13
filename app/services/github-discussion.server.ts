@@ -14,10 +14,19 @@ import { any } from '~/utils/permission'
 
 import { getUserPermissions, type User } from './auth.server'
 
+const githubUrl = new URL(
+  `https://${process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'}`,
+)
+const baseUrl = githubUrl.host.startsWith('github.com')
+  ? 'https://api.github.com'
+  : `https://${githubUrl.host}/api/v3`
+const [, owner, repo] = githubUrl.pathname.split('/')
+
 function getOctokitClient() {
   if (process.env.GITHUB_API_KEY) {
     return new Octokit({
       auth: process.env.GITHUB_API_KEY,
+      baseUrl,
     })
   } else if (
     process.env.GITHUB_APP_ID &&
@@ -31,6 +40,7 @@ function getOctokitClient() {
         privateKey: process.env.GITHUB_PRIVATE_KEY,
         installationId: process.env.GITHUB_INSTALLATION_ID,
       },
+      baseUrl,
     })
   } else {
     return null
@@ -80,8 +90,8 @@ export async function fetchDiscussion(
   if (!any(userPermissions, [{ GetDiscussion: rfd }, 'GetDiscussionsAll'])) return null
 
   const reviews: ListReviewsResponseType = await octokit.rest.pulls.listReviews({
-    owner: 'oxidecomputer',
-    repo: 'rfd',
+    owner,
+    repo,
     pull_number: pullNumber,
     per_page: 100,
   })
@@ -97,8 +107,8 @@ export async function fetchDiscussion(
   let comments: ListReviewsCommentsType = []
   await octokit
     .paginate(octokit.rest.pulls.listReviewComments, {
-      owner: 'oxidecomputer',
-      repo: 'rfd',
+      owner,
+      repo,
       pull_number: pullNumber,
       per_page: 100,
     })
@@ -111,8 +121,8 @@ export async function fetchDiscussion(
     })
 
   const prComments = await octokit.paginate(octokit.rest.issues.listComments, {
-    owner: 'oxidecomputer',
-    repo: 'rfd',
+    owner,
+    repo,
     issue_number: pullNumber,
     per_page: 100,
   })
