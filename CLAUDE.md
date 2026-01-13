@@ -30,15 +30,15 @@ deno task build      # Build using Deno's npm compatibility
 deno task compile    # Compile to standalone binary
 ```
 
-### Docker Build
+### Container Build (Podman)
 
 ```bash
-docker build -t rfd-site .                    # Build container
-docker run -p 3000:3000 rfd-site              # Run container
-docker run -p 3000:3000 -e PORT=8080 rfd-site # Custom port
+podman build -t rfd-site .                    # Build container
+podman run -p 3000:3000 rfd-site              # Run container
+podman run -p 3000:3000 -e PORT=8080 rfd-site # Custom port
 ```
 
-The Dockerfile uses a multi-stage build:
+The Containerfile uses a multi-stage build:
 1. Node stage: Builds the React Router app with npm
 2. Deno stage: Compiles server.ts with embedded assets into a standalone binary
 3. Scratch stage: Minimal final image with just the binary and CA certs
