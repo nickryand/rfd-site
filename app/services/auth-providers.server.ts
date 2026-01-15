@@ -9,7 +9,8 @@
 export type AuthProvider = 'github' | 'google' | 'email'
 export const ALL_PROVIDERS: AuthProvider[] = ['github', 'google', 'email']
 
-function parseAuthProviders(): AuthProvider[] {
+// Exported for testing
+export function parseAuthProviders(): AuthProvider[] {
   const envValue = process.env.AUTH_PROVIDERS
 
   // Backwards compatibility: if not set, enable all providers
@@ -34,46 +35,104 @@ function parseAuthProviders(): AuthProvider[] {
   return validProviders
 }
 
-function hasRequiredEnvVars(provider: AuthProvider): boolean {
-  // Core vars required for all OAuth providers
-  const hasCore =
-    !!process.env.RFD_API &&
-    !!process.env.RFD_API_CLIENT_ID &&
-    !!process.env.RFD_API_CLIENT_SECRET
-
+// Exported for testing
+export function getRequiredEnvVars(provider: AuthProvider): string[] {
   switch (provider) {
     case 'github':
-      return hasCore && !!process.env.RFD_API_GITHUB_CALLBACK_URL
+      return [
+        'RFD_API',
+        'RFD_API_CLIENT_ID',
+        'RFD_API_CLIENT_SECRET',
+        'RFD_API_GITHUB_CALLBACK_URL',
+      ]
     case 'google':
-      return hasCore && !!process.env.RFD_API_GOOGLE_CALLBACK_URL
+      return [
+        'RFD_API',
+        'RFD_API_CLIENT_ID',
+        'RFD_API_CLIENT_SECRET',
+        'RFD_API_GOOGLE_CALLBACK_URL',
+      ]
     case 'email':
-      return !!process.env.RFD_API && !!process.env.RFD_API_MLINK_SECRET
+      return ['RFD_API', 'RFD_API_MLINK_SECRET']
     default:
-      return false
+      return []
   }
 }
 
-// Computed at module load time
-const _requestedProviders = parseAuthProviders()
-const _enabledProviders = _requestedProviders.filter((provider) => {
-  if (!hasRequiredEnvVars(provider)) {
-    console.warn(
-      `[auth-providers] Provider "${provider}" is enabled but missing required env vars, disabling`,
+// Exported for testing
+export function getMissingEnvVars(provider: AuthProvider): string[] {
+  const required = getRequiredEnvVars(provider)
+  return required.filter((varName) => !process.env[varName])
+}
+
+export type ValidationResult =
+  | { valid: true; providers: AuthProvider[] }
+  | { valid: false; errors: { provider: AuthProvider; missing: string[] }[] }
+
+/**
+ * Validates that all requested providers have their required environment variables set.
+ * Returns a ValidationResult indicating success or listing missing variables.
+ */
+export function validateAuthProviders(): ValidationResult {
+  const requestedProviders = parseAuthProviders()
+
+  const errors: { provider: AuthProvider; missing: string[] }[] = []
+  for (const provider of requestedProviders) {
+    const missing = getMissingEnvVars(provider)
+    if (missing.length > 0) {
+      errors.push({ provider, missing })
+    }
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors }
+  }
+
+  return { valid: true, providers: requestedProviders }
+}
+
+/**
+ * Validates auth providers and exits the process if any are misconfigured.
+ * Call this during app startup to ensure required environment variables are set.
+ */
+export function validateAuthProvidersOrExit(): void {
+  const result = validateAuthProviders()
+  if (!result.valid) {
+    console.error('[auth-providers] ERROR: Missing required environment variables')
+    for (const { provider, missing } of result.errors) {
+      console.error(`  Provider "${provider}" requires: ${missing.join(', ')}`)
+    }
+    console.error(
+      '\nEither set the missing environment variables or remove the provider from AUTH_PROVIDERS.',
     )
-    return false
+    process.exit(1)
   }
-  return true
-})
-
-// Log configuration at startup
-if (_enabledProviders.length === 0) {
-  console.warn('[auth-providers] WARNING: No auth providers are enabled!')
 }
+
+// Lazy initialization - providers are computed on first access
+let _enabledProviders: AuthProvider[] | null = null
 
 export function getEnabledProviders(): AuthProvider[] {
+  if (_enabledProviders === null) {
+    // Validate on first access if not already done
+    const result = validateAuthProviders()
+    if (!result.valid) {
+      // In production, this would have been caught by validateAuthProvidersOrExit
+      // For safety, default to empty providers if validation wasn't run
+      console.error('[auth-providers] WARNING: Providers accessed before validation')
+      _enabledProviders = []
+    } else {
+      _enabledProviders = result.providers
+    }
+  }
   return _enabledProviders
 }
 
 export function isProviderEnabled(provider: AuthProvider): boolean {
-  return _enabledProviders.includes(provider)
+  return getEnabledProviders().includes(provider)
+}
+
+// Reset function for testing
+export function _resetForTesting(): void {
+  _enabledProviders = null
 }
