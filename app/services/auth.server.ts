@@ -19,10 +19,21 @@ import { Authenticator } from 'remix-auth'
 
 import { isTruthy } from '~/utils/isTruthy'
 
-import { getEnabledProviders, isProviderEnabled } from './auth-providers.server'
+import {
+  getEnabledProviders,
+  isProviderEnabled,
+  validateAuthProvidersOrExit,
+} from './auth-providers.server'
 import { returnToCookie } from './cookies.server'
 import { client, fetchRemoteGroups, handleApiResponse } from './rfd.remote.server'
 import { sessionStorage } from './session.server'
+
+// Validate auth provider configuration at startup (skip in local development mode)
+const isLocalMode =
+  process.env.NODE_ENV === 'development' && !!process.env.LOCAL_RFD_REPO
+if (!isLocalMode) {
+  validateAuthProvidersOrExit()
+}
 
 export type User = {
   id: string
