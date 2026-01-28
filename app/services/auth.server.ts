@@ -19,18 +19,18 @@ import { Authenticator } from 'remix-auth'
 
 import { isTruthy } from '~/utils/isTruthy'
 
-import {
-  getEnabledProviders,
-  isProviderEnabled,
-  validateAuthProvidersOrExit,
-} from './auth-providers.server'
+import { isProviderEnabled, validateAuthProvidersOrExit } from './auth-providers.server'
 import { returnToCookie } from './cookies.server'
-import { client, fetchRemoteGroups, handleApiResponse } from './rfd.remote.server'
+import {
+  client,
+  fetchRemoteGroups,
+  getRfdApiFrontendUrl,
+  handleApiResponse,
+} from './rfd.remote.server'
 import { sessionStorage } from './session.server'
 
 // Validate auth provider configuration at startup (skip in local development mode)
-const isLocalMode =
-  process.env.NODE_ENV === 'development' && !!process.env.LOCAL_RFD_REPO
+const isLocalMode = process.env.NODE_ENV === 'development' && !!process.env.LOCAL_RFD_REPO
 if (!isLocalMode) {
   validateAuthProvidersOrExit()
 }
@@ -101,12 +101,18 @@ const verify: RfdVerifyCallback<User> = async ({ tokens }) => {
 if (isProviderEnabled('google')) {
   const googleOAuth = new RfdOAuthStrategy(
     {
-      host: process.env.RFD_API || '',
+      host: getRfdApiFrontendUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GOOGLE_CALLBACK_URL || '',
       remoteProvider: 'google',
-      scopes: ['group:info:r', 'rfd:content:r', 'rfd:discussion:r', 'search', 'user:info:r'],
+      scopes: [
+        'group:info:r',
+        'rfd:content:r',
+        'rfd:discussion:r',
+        'search',
+        'user:info:r',
+      ],
     },
     verify,
   )
@@ -116,12 +122,18 @@ if (isProviderEnabled('google')) {
 if (isProviderEnabled('github')) {
   const githubOAuth = new RfdOAuthStrategy(
     {
-      host: process.env.RFD_API || '',
+      host: getRfdApiFrontendUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GITHUB_CALLBACK_URL || '',
       remoteProvider: 'github',
-      scopes: ['group:info:r', 'rfd:content:r', 'rfd:discussion:r', 'search', 'user:info:r'],
+      scopes: [
+        'group:info:r',
+        'rfd:content:r',
+        'rfd:discussion:r',
+        'search',
+        'user:info:r',
+      ],
     },
     verify,
   )
@@ -132,7 +144,7 @@ if (isProviderEnabled('email')) {
   const magicLink = new RfdMagicLinkStrategy(
     {
       storage: sessionStorage,
-      host: process.env.RFD_API || '',
+      host: getRfdApiFrontendUrl(),
       clientSecret: process.env.RFD_API_MLINK_SECRET || '',
       pendingPath: '/login?email=sent',
       returnPath: '/auth/magic/callback',

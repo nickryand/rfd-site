@@ -6,9 +6,9 @@
  * Copyright Oxide Computer Company
  */
 
-import { createRequestHandler, type ServerBuild } from 'react-router'
 import { contentType } from '@std/media-types'
-import { extname, fromFileUrl, dirname, join } from '@std/path'
+import { dirname, extname, fromFileUrl, join } from '@std/path'
+import { createRequestHandler, type ServerBuild } from 'react-router'
 
 const MODE = Deno.env.get('NODE_ENV') ?? 'production'
 const PORT = parseInt(Deno.env.get('PORT') ?? '3000', 10)
@@ -27,9 +27,7 @@ const handler = createRequestHandler(build, MODE)
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable'
 const DEFAULT_CACHE_CONTROL = 'public, max-age=3600'
 
-async function serveStaticFile(
-  pathname: string,
-): Promise<Response | null> {
+async function serveStaticFile(pathname: string): Promise<Response | null> {
   // Resolve path relative to the module directory
   // In compiled mode, embedded files are accessible at their original paths
   const filePath = join(moduleDir, 'build', 'client', pathname)

@@ -1,10 +1,13 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
 
 ## Project Overview
 
-RFD Site is Oxide Computer Company's web frontend for browsing, searching, and reading RFDs (Requests for Discussion). Built with React Router v7 (formerly Remix). Can be deployed on Vercel or run as a Deno container.
+RFD Site is Oxide Computer Company's web frontend for browsing, searching, and reading RFDs
+(Requests for Discussion). Built with React Router v7 (formerly Remix). Can be deployed on
+Vercel or run as a Deno container.
 
 ## Commands
 
@@ -39,6 +42,7 @@ podman run -p 3000:3000 -e PORT=8080 rfd-site # Custom port
 ```
 
 The Containerfile uses a multi-stage build:
+
 1. Node stage: Builds the React Router app with npm
 2. Deno stage: Compiles server.ts with embedded assets into a standalone binary
 3. Scratch stage: Minimal final image with just the binary and CA certs
@@ -59,7 +63,8 @@ Preview RFDs from a local clone of the rfd repo:
 LOCAL_RFD_REPO=~/oxide/rfd npm run dev
 ```
 
-This mode reads RFD files directly from the specified directory without needing API credentials.
+This mode reads RFD files directly from the specified directory without needing API
+credentials.
 
 ## Architecture
 
@@ -67,14 +72,18 @@ This mode reads RFD files directly from the specified directory without needing 
 
 The app operates in two modes controlled by `LOCAL_RFD_REPO` env var:
 
-- **Local mode** (`app/services/rfd.local.server.ts`): Reads AsciiDoc files directly from a local rfd repo clone. Used for authoring/previewing.
-- **Remote mode** (`app/services/rfd.remote.server.ts`): Fetches from the rfd-api backend. Used in production with OAuth authentication.
+- **Local mode** (`app/services/rfd.local.server.ts`): Reads AsciiDoc files directly from a
+  local rfd repo clone. Used for authoring/previewing.
+- **Remote mode** (`app/services/rfd.remote.server.ts`): Fetches from the rfd-api backend.
+  Used in production with OAuth authentication.
 
-The unified interface in `app/services/rfd.server.ts` abstracts this, calling either backend based on `isLocalMode()`.
+The unified interface in `app/services/rfd.server.ts` abstracts this, calling either backend
+based on `isLocalMode()`.
 
 ### Routing
 
-Uses React Router v7 file-based routing (`@react-router/fs-routes`). Routes are in `app/routes/`:
+Uses React Router v7 file-based routing (`@react-router/fs-routes`). Routes are in
+`app/routes/`:
 
 - `_index.tsx` - RFD listing page
 - `rfd.$slug.tsx` - Individual RFD view
@@ -83,7 +92,9 @@ Uses React Router v7 file-based routing (`@react-router/fs-routes`). Routes are 
 
 ### Content Rendering
 
-RFDs are written in AsciiDoc and rendered with `@oxide/react-asciidoc`. Custom block renderers live in `app/components/AsciidocBlocks/` (Mermaid diagrams, syntax-highlighted code listings, images).
+RFDs are written in AsciiDoc and rendered with `@oxide/react-asciidoc`. Custom block
+renderers live in `app/components/AsciidocBlocks/` (Mermaid diagrams, syntax-highlighted
+code listings, images).
 
 ### Path Alias
 
