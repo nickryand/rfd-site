@@ -23,26 +23,17 @@ export function getApiUrlMissingVars(): string[] {
   const hasBackend = !!process.env.RFD_API_BACKEND_URL
   const hasFrontend = !!process.env.RFD_API_FRONTEND_URL
 
-  // Valid: legacy RFD_API covers both
-  if (hasLegacy) {
-    return []
+  switch (true) {
+    case hasLegacy:
+    case hasBackend && hasFrontend:
+      return []
+    case hasBackend && !hasFrontend:
+      return ['RFD_API_FRONTEND_URL (or RFD_API as fallback)']
+    case hasFrontend && !hasBackend:
+      return ['RFD_API_BACKEND_URL (or RFD_API as fallback)']
+    default:
+      return ['RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)']
   }
-
-  // Valid: both new vars set
-  if (hasBackend && hasFrontend) {
-    return []
-  }
-
-  // Invalid: only one new var set without legacy fallback
-  if (hasBackend && !hasFrontend) {
-    return ['RFD_API_FRONTEND_URL (or RFD_API as fallback)']
-  }
-  if (hasFrontend && !hasBackend) {
-    return ['RFD_API_BACKEND_URL (or RFD_API as fallback)']
-  }
-
-  // Invalid: no API URL vars set at all
-  return ['RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)']
 }
 
 // Exported for testing
