@@ -83,6 +83,7 @@ export function client(token?: string): Api {
   return new ApiWithRetry({
     host: getRfdApiUrl(),
     token,
+    authorizationHost: getRfdApiFrontendUrl(),
     baseParams: {
       headers: { Connection: 'keep-alive' },
     },

@@ -25,6 +25,7 @@ import {
   client,
   fetchRemoteGroups,
   getRfdApiFrontendUrl,
+  getRfdApiUrl,
   handleApiResponse,
 } from './rfd.remote.server'
 import { sessionStorage } from './session.server'
@@ -101,7 +102,8 @@ const verify: RfdVerifyCallback<User> = async ({ tokens }) => {
 if (isProviderEnabled('google')) {
   const googleOAuth = new RfdOAuthStrategy(
     {
-      host: getRfdApiFrontendUrl(),
+      authorizationHost: getRfdApiFrontendUrl(),
+      tokenHost: getRfdApiUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GOOGLE_CALLBACK_URL || '',
@@ -122,7 +124,8 @@ if (isProviderEnabled('google')) {
 if (isProviderEnabled('github')) {
   const githubOAuth = new RfdOAuthStrategy(
     {
-      host: getRfdApiFrontendUrl(),
+      authorizationHost: getRfdApiFrontendUrl(),
+      tokenHost: getRfdApiUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GITHUB_CALLBACK_URL || '',
