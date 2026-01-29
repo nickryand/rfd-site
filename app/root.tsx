@@ -132,7 +132,7 @@ const queryClient = new QueryClient()
 const Layout = ({
   children,
   theme,
-  headScriptheadScript,
+  headScript,
 }: {
   children: React.ReactNode
   theme?: string
