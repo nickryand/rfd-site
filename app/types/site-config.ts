@@ -36,8 +36,8 @@ export interface SiteConfig {
     learnMoreContent?: string
   } | null
 
-  // Custom head content (for analytics, fonts, etc) - raw HTML string
-  headContent?: string
+  // Custom head script (for analytics, etc) - injected into a <script> tag
+  headScript?: string
 
   // Feature flags
   features: {

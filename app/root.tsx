@@ -132,11 +132,11 @@ const queryClient = new QueryClient()
 const Layout = ({
   children,
   theme,
-  headContent,
+  headScriptheadScript,
 }: {
   children: React.ReactNode
   theme?: string
-  headContent?: string
+  headScript?: string
 }) => (
   <html lang="en" className={theme}>
     <head>
@@ -148,8 +148,8 @@ const Layout = ({
       <link rel="icon" type="image/png" href="/favicon.png" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="color-scheme" content="dark" />
-      {process.env.NODE_ENV === 'production' && headContent && (
-        <script dangerouslySetInnerHTML={{ __html: headContent }} />
+      {process.env.NODE_ENV === 'production' && headScript && (
+        <script dangerouslySetInnerHTML={{ __html: headScript }} />
       )}
     </head>
     <body className="mb-32">
@@ -164,7 +164,7 @@ export default function App() {
   const { theme, localMode, config } = useLoaderData<typeof loader>()
 
   return (
-    <Layout theme={theme} headContent={config.headContent}>
+    <Layout theme={theme} headScript={config.headScript}>
       <LoadingBar />
       <QueryClientProvider client={queryClient}>
         <Outlet />

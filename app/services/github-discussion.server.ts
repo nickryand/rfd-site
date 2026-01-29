@@ -76,7 +76,8 @@ export async function fetchDiscussion(
   const config = await getSiteConfig()
 
   if (!config.features.discussions) {
-    throw new Error('GitHub discussions feature is disabled')
+    console.error('GitHub discussions feature is disabled')
+    return null
   }
 
   // Parse owner/repo from URL
