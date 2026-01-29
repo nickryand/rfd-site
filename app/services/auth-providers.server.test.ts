@@ -9,12 +9,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
+  _resetForTesting,
   ALL_PROVIDERS,
+  getApiUrlMissingVars,
   getMissingEnvVars,
   getRequiredEnvVars,
   parseAuthProviders,
   validateAuthProviders,
-  _resetForTesting,
 } from './auth-providers.server'
 
 describe('parseAuthProviders', () => {
@@ -87,7 +88,6 @@ describe('parseAuthProviders', () => {
 describe('getRequiredEnvVars', () => {
   it('returns correct env vars for github provider', () => {
     expect(getRequiredEnvVars('github')).toEqual([
-      'RFD_API',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GITHUB_CALLBACK_URL',
@@ -96,7 +96,6 @@ describe('getRequiredEnvVars', () => {
 
   it('returns correct env vars for google provider', () => {
     expect(getRequiredEnvVars('google')).toEqual([
-      'RFD_API',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GOOGLE_CALLBACK_URL',
@@ -104,7 +103,70 @@ describe('getRequiredEnvVars', () => {
   })
 
   it('returns correct env vars for email provider', () => {
-    expect(getRequiredEnvVars('email')).toEqual(['RFD_API', 'RFD_API_MLINK_SECRET'])
+    expect(getRequiredEnvVars('email')).toEqual(['RFD_API_MLINK_SECRET'])
+  })
+})
+
+describe('getApiUrlMissingVars', () => {
+  const envVarsToRestore: Record<string, string | undefined> = {}
+
+  beforeEach(() => {
+    const allVars = ['RFD_API', 'RFD_API_BACKEND_URL', 'RFD_API_FRONTEND_URL']
+    for (const varName of allVars) {
+      envVarsToRestore[varName] = process.env[varName]
+      delete process.env[varName]
+    }
+  })
+
+  afterEach(() => {
+    for (const [varName, value] of Object.entries(envVarsToRestore)) {
+      if (value === undefined) {
+        delete process.env[varName]
+      } else {
+        process.env[varName] = value
+      }
+    }
+  })
+
+  it('returns empty when RFD_API is set (legacy mode)', () => {
+    process.env.RFD_API = 'https://api.example.com'
+    expect(getApiUrlMissingVars()).toEqual([])
+  })
+
+  it('returns empty when both new vars are set', () => {
+    process.env.RFD_API_BACKEND_URL = 'https://internal.api.example.com'
+    process.env.RFD_API_FRONTEND_URL = 'https://api.example.com'
+    expect(getApiUrlMissingVars()).toEqual([])
+  })
+
+  it('returns empty when backend is set with RFD_API fallback for frontend', () => {
+    process.env.RFD_API_BACKEND_URL = 'https://internal.api.example.com'
+    process.env.RFD_API = 'https://api.example.com'
+    expect(getApiUrlMissingVars()).toEqual([])
+  })
+
+  it('returns empty when frontend is set with RFD_API fallback for backend', () => {
+    process.env.RFD_API_FRONTEND_URL = 'https://api.example.com'
+    process.env.RFD_API = 'https://internal.api.example.com'
+    expect(getApiUrlMissingVars()).toEqual([])
+  })
+
+  it('returns helpful error when only backend is set', () => {
+    process.env.RFD_API_BACKEND_URL = 'https://internal.api.example.com'
+    expect(getApiUrlMissingVars()).toEqual([
+      'RFD_API_FRONTEND_URL (or RFD_API as fallback)',
+    ])
+  })
+
+  it('returns helpful error when only frontend is set', () => {
+    process.env.RFD_API_FRONTEND_URL = 'https://api.example.com'
+    expect(getApiUrlMissingVars()).toEqual(['RFD_API_BACKEND_URL (or RFD_API as fallback)'])
+  })
+
+  it('returns error when no API URL vars are set', () => {
+    expect(getApiUrlMissingVars()).toEqual([
+      'RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)',
+    ])
   })
 })
 
@@ -115,6 +177,8 @@ describe('getMissingEnvVars', () => {
     // Save all relevant env vars
     const allVars = [
       'RFD_API',
+      'RFD_API_BACKEND_URL',
+      'RFD_API_FRONTEND_URL',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GITHUB_CALLBACK_URL',
@@ -138,30 +202,43 @@ describe('getMissingEnvVars', () => {
     }
   })
 
-  it('returns all required vars when none are set for github', () => {
+  it('returns API URL error plus provider vars when none are set for github', () => {
     expect(getMissingEnvVars('github')).toEqual([
-      'RFD_API',
+      'RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GITHUB_CALLBACK_URL',
     ])
   })
 
-  it('returns all required vars when none are set for google', () => {
+  it('returns API URL error plus provider vars when none are set for google', () => {
     expect(getMissingEnvVars('google')).toEqual([
-      'RFD_API',
+      'RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GOOGLE_CALLBACK_URL',
     ])
   })
 
-  it('returns all required vars when none are set for email', () => {
-    expect(getMissingEnvVars('email')).toEqual(['RFD_API', 'RFD_API_MLINK_SECRET'])
+  it('returns API URL error plus provider vars when none are set for email', () => {
+    expect(getMissingEnvVars('email')).toEqual([
+      'RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)',
+      'RFD_API_MLINK_SECRET',
+    ])
   })
 
-  it('returns empty array when all required vars are set for github', () => {
+  it('returns empty array when all required vars are set for github (legacy RFD_API)', () => {
     process.env.RFD_API = 'https://api.example.com'
+    process.env.RFD_API_CLIENT_ID = 'client-id'
+    process.env.RFD_API_CLIENT_SECRET = 'client-secret'
+    process.env.RFD_API_GITHUB_CALLBACK_URL = 'https://example.com/callback'
+
+    expect(getMissingEnvVars('github')).toEqual([])
+  })
+
+  it('returns empty array when using split URLs for github', () => {
+    process.env.RFD_API_BACKEND_URL = 'https://internal.api.example.com'
+    process.env.RFD_API_FRONTEND_URL = 'https://api.example.com'
     process.env.RFD_API_CLIENT_ID = 'client-id'
     process.env.RFD_API_CLIENT_SECRET = 'client-secret'
     process.env.RFD_API_GITHUB_CALLBACK_URL = 'https://example.com/callback'
@@ -212,6 +289,8 @@ describe('validateAuthProviders', () => {
     const allVars = [
       'AUTH_PROVIDERS',
       'RFD_API',
+      'RFD_API_BACKEND_URL',
+      'RFD_API_FRONTEND_URL',
       'RFD_API_CLIENT_ID',
       'RFD_API_CLIENT_SECRET',
       'RFD_API_GITHUB_CALLBACK_URL',
@@ -279,7 +358,7 @@ describe('validateAuthProviders', () => {
       expect(result.errors).toHaveLength(1)
       expect(result.errors[0].provider).toBe('github')
       expect(result.errors[0].missing).toEqual([
-        'RFD_API',
+        'RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)',
         'RFD_API_CLIENT_ID',
         'RFD_API_CLIENT_SECRET',
         'RFD_API_GITHUB_CALLBACK_URL',

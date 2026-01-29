@@ -9,6 +9,33 @@
 export type AuthProvider = 'github' | 'google' | 'email'
 export const ALL_PROVIDERS: AuthProvider[] = ['github', 'google', 'email']
 
+/**
+ * Checks if a valid API URL configuration exists.
+ * Returns empty array if valid, or an array with a helpful error message.
+ *
+ * Valid configurations:
+ * - RFD_API only (legacy, both URLs same)
+ * - RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL (split URLs)
+ * - One new var + RFD_API as fallback for the other
+ */
+export function getApiUrlMissingVars(): string[] {
+  const hasLegacy = !!process.env.RFD_API
+  const hasBackend = !!process.env.RFD_API_BACKEND_URL
+  const hasFrontend = !!process.env.RFD_API_FRONTEND_URL
+
+  switch (true) {
+    case hasLegacy:
+    case hasBackend && hasFrontend:
+      return []
+    case hasBackend && !hasFrontend:
+      return ['RFD_API_FRONTEND_URL (or RFD_API as fallback)']
+    case hasFrontend && !hasBackend:
+      return ['RFD_API_BACKEND_URL (or RFD_API as fallback)']
+    default:
+      return ['RFD_API (or RFD_API_BACKEND_URL + RFD_API_FRONTEND_URL)']
+  }
+}
+
 // Exported for testing
 export function parseAuthProviders(): AuthProvider[] {
   const envValue = process.env.AUTH_PROVIDERS
@@ -28,7 +55,9 @@ export function parseAuthProviders(): AuthProvider[] {
     if (ALL_PROVIDERS.includes(provider as AuthProvider)) {
       validProviders.push(provider as AuthProvider)
     } else {
-      console.warn(`[auth-providers] Unknown provider "${provider}" in AUTH_PROVIDERS, ignoring`)
+      console.warn(
+        `[auth-providers] Unknown provider "${provider}" in AUTH_PROVIDERS, ignoring`,
+      )
     }
   }
 
@@ -36,24 +65,15 @@ export function parseAuthProviders(): AuthProvider[] {
 }
 
 // Exported for testing
+// Note: RFD_API URL validation is handled separately by getApiUrlMissingVars()
 export function getRequiredEnvVars(provider: AuthProvider): string[] {
   switch (provider) {
     case 'github':
-      return [
-        'RFD_API',
-        'RFD_API_CLIENT_ID',
-        'RFD_API_CLIENT_SECRET',
-        'RFD_API_GITHUB_CALLBACK_URL',
-      ]
+      return ['RFD_API_CLIENT_ID', 'RFD_API_CLIENT_SECRET', 'RFD_API_GITHUB_CALLBACK_URL']
     case 'google':
-      return [
-        'RFD_API',
-        'RFD_API_CLIENT_ID',
-        'RFD_API_CLIENT_SECRET',
-        'RFD_API_GOOGLE_CALLBACK_URL',
-      ]
+      return ['RFD_API_CLIENT_ID', 'RFD_API_CLIENT_SECRET', 'RFD_API_GOOGLE_CALLBACK_URL']
     case 'email':
-      return ['RFD_API', 'RFD_API_MLINK_SECRET']
+      return ['RFD_API_MLINK_SECRET']
     default:
       return []
   }
@@ -62,7 +82,12 @@ export function getRequiredEnvVars(provider: AuthProvider): string[] {
 // Exported for testing
 export function getMissingEnvVars(provider: AuthProvider): string[] {
   const required = getRequiredEnvVars(provider)
-  return required.filter((varName) => !process.env[varName])
+  const missing = required.filter((varName) => !process.env[varName])
+
+  // Add API URL missing vars (handled centrally for all providers)
+  const apiUrlMissing = getApiUrlMissingVars()
+
+  return [...apiUrlMissing, ...missing]
 }
 
 export type ValidationResult =

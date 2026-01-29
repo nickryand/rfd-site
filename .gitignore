@@ -28,3 +28,4 @@ test-results/
 # Deno
 deno.lock
 rfd-server
+.flox/

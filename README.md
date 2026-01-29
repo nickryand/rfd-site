@@ -104,7 +104,25 @@ When running in a non-local mode, the following settings must be specified:
 
 #### Authentication
 
-- `RFD_API` - Backend RFD API to communicate with (i.e. https://api.server.com)
+##### API URL Configuration
+
+The RFD API URL can be configured in two ways:
+
+- `RFD_API` - Single URL for both server-to-server calls and OAuth redirects (legacy,
+  simplest)
+- `RFD_API_BACKEND_URL` + `RFD_API_FRONTEND_URL` - Split URLs for deployments where rfd-site
+  uses internal networking to reach rfd-api while users access a public endpoint
+
+When using split URLs:
+
+- `RFD_API_BACKEND_URL` - URL for server-to-server API calls (e.g., internal load balancer)
+- `RFD_API_FRONTEND_URL` - URL for OAuth redirects where user's browser is directed
+
+You can mix configurations: set one of the new vars and use `RFD_API` as fallback for the
+other. Existing deployments using only `RFD_API` will continue to work unchanged.
+
+##### OAuth Credentials
+
 - `RFD_API_CLIENT_ID` - OAuth client id created via the RFD API
 - `RFD_API_CLIENT_SECRET` - OAuth client secret created via the RFD API
 - `RFD_API_GOOGLE_CALLBACK_URL` - Should be of the form of
@@ -128,9 +146,9 @@ When running in a non-local mode, the following settings must be specified:
 
 #### GitHub Integration
 
-- `GITHUB_HOST` - GitHub host for the RFD repository. Defaults to `github.com/oxidecomputer/rfd`.
-  Set this to use a GitHub Enterprise instance or a different repository location
-  (e.g., `github.example.com/org/rfd`).
+- `GITHUB_HOST` - GitHub host for the RFD repository. Defaults to
+  `github.com/oxidecomputer/rfd`. Set this to use a GitHub Enterprise instance or a
+  different repository location (e.g., `github.example.com/org/rfd`).
 - `GITHUB_APP_ID` - App id for fetching GitHub PR discussions
 - `GITHUB_INSTALLATION_ID` - Installation id of GitHub App
 - `GITHUB_PRIVATE_KEY` - Private key of the GitHub app for discussion fetching
