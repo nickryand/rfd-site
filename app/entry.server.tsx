@@ -6,9 +6,10 @@
  * Copyright Oxide Computer Company
  */
 
-import { isbot } from 'isbot'
+import type { EntryContext } from 'react-router'
+import { ServerRouter } from 'react-router'
 import { renderToReadableStream } from 'react-dom/server'
-import { ServerRouter, type EntryContext } from 'react-router'
+import { isbot } from 'isbot'
 
 export default async function handleRequest(
   request: Request,

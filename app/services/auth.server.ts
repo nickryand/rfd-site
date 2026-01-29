@@ -108,13 +108,7 @@ if (isProviderEnabled('google')) {
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GOOGLE_CALLBACK_URL || '',
       remoteProvider: 'google',
-      scopes: [
-        'group:info:r',
-        'rfd:content:r',
-        'rfd:discussion:r',
-        'search',
-        'user:info:r',
-      ],
+      scopes: ['group:info:r', 'rfd:content:r', 'rfd:discussion:r', 'search', 'user:info:r'],
     },
     verify,
   )
@@ -130,13 +124,7 @@ if (isProviderEnabled('github')) {
       clientSecret: process.env.RFD_API_CLIENT_SECRET || '',
       redirectURI: process.env.RFD_API_GITHUB_CALLBACK_URL || '',
       remoteProvider: 'github',
-      scopes: [
-        'group:info:r',
-        'rfd:content:r',
-        'rfd:discussion:r',
-        'search',
-        'user:info:r',
-      ],
+      scopes: ['group:info:r', 'rfd:content:r', 'rfd:discussion:r', 'search', 'user:info:r'],
     },
     verify,
   )

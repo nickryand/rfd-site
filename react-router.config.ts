@@ -13,6 +13,9 @@ export default {
   buildEnd: async ({ buildManifest }) => {
     // Write the asset manifest for the Deno server to use
     const { writeFile } = await import('node:fs/promises')
-    await writeFile('build/server/manifest.json', JSON.stringify(buildManifest, null, 2))
+    await writeFile(
+      'build/server/manifest.json',
+      JSON.stringify(buildManifest, null, 2),
+    )
   },
 } satisfies Config

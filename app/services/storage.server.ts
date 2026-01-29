@@ -6,9 +6,9 @@
  * Copyright Oxide Computer Company
  */
 
-import { createHmac } from 'crypto'
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { createHmac } from 'crypto'
 
 export type StorageProvider = 'gcs' | 's3'
 
@@ -60,10 +60,7 @@ export async function getExpiringUrl(path: string, ttlInSeconds: number): Promis
  * Required environment variables:
  * - S3_BUCKET: The S3 bucket name
  */
-export async function getS3ExpiringUrl(
-  path: string,
-  ttlInSeconds: number,
-): Promise<string> {
+export async function getS3ExpiringUrl(path: string, ttlInSeconds: number): Promise<string> {
   const bucket = process.env.S3_BUCKET
 
   if (!bucket) {

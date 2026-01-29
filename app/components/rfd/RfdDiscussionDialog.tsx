@@ -244,7 +244,11 @@ const DialogContent = ({
             </DialogDismiss>
           </div>
         </div>
-        <a href={`${githubRepoUrl}/pull/${pullNumber}`} target="_blank" rel="noreferrer">
+        <a
+          href={`${githubRepoUrl}/pull/${pullNumber}`}
+          target="_blank"
+          rel="noreferrer"
+        >
           <div className="text-sans-2xl text-secondary">#{pullNumber}</div>
         </a>
       </DialogHeading>
