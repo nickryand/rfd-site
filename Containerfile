@@ -22,7 +22,7 @@ COPY react-router.config.ts ./
 COPY svgr.config.js ./
 
 # Build the application
-RUN npm run build
+RUN BUILD_TARGET=deno npm run build
 
 # =============================================================================
 # Stage 2: Compile Deno server into standalone binary

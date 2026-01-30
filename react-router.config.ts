@@ -8,14 +8,24 @@
 
 import type { Config } from '@react-router/dev/config'
 
-export default {
+const buildTarget = process.env.BUILD_TARGET || 'vercel'
+
+const config: Config = {
   ssr: true,
-  buildEnd: async ({ buildManifest }) => {
-    // Write the asset manifest for the Deno server to use
+}
+
+if (buildTarget === 'vercel') {
+  const { vercelPreset } = await import('@vercel/react-router/vite')
+  config.presets = [vercelPreset()]
+} else {
+  // Deno/container build - write manifest for the Deno server
+  config.buildEnd = async ({ buildManifest }) => {
     const { writeFile } = await import('node:fs/promises')
     await writeFile(
       'build/server/manifest.json',
       JSON.stringify(buildManifest, null, 2),
     )
-  },
-} satisfies Config
+  }
+}
+
+export default config satisfies Config
