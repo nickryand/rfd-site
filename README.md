@@ -101,6 +101,7 @@ combined branch that contains both.
 When running in a non-local mode, the following settings must be specified:
 
 - `SESSION_SECRET` - Key that will be used to signed cookies
+- `TELEMETRY_DISABLE` - Disable all remote telemetry. Set to any non-empty value to disable (e.g., `1`, `true`, `yes`). Leave unset or set to empty string to enable.
 
 #### Authentication
 
