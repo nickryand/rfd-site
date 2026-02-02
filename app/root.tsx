@@ -124,7 +124,7 @@ const Layout = ({ children, theme }: { children: React.ReactNode; theme?: string
       <link rel="icon" type="image/png" href="/favicon.png" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       {/* Use plausible analytics only on Vercel */}
-      {process.env.NODE_ENV === 'production' && (
+      {process.env.NODE_ENV === 'production' && !process.env.TELEMETRY_DISABLE && (
         <script defer data-domain="rfd.shared.oxide.computer" src="/js/viewscript.js" />
       )}
       <meta name="color-scheme" content="dark" />
