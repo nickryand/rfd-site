@@ -14,16 +14,10 @@ import { any } from '~/utils/permission'
 
 import { getUserPermissions, type User } from './auth.server'
 import { getSiteConfig } from './config.server'
+import { getGitHubApiBaseUrl } from './github-config.server'
 
-const githubUrl = new URL(
-  `https://${process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'}`,
-)
-const baseUrl = githubUrl.host.startsWith('github.com')
-  ? 'https://api.github.com'
-  : `https://${githubUrl.host}/api/v3`
-const [, owner, repo] = githubUrl.pathname.split('/')
-
-function getOctokitClient() {
+async function getOctokitClient() {
+  const baseUrl = await getGitHubApiBaseUrl()
   if (process.env.GITHUB_API_KEY) {
     return new Octokit({
       auth: process.env.GITHUB_API_KEY,
@@ -99,7 +93,7 @@ export async function fetchDiscussion(
 
   const [, owner, repo] = match
 
-  const octokit = getOctokitClient()
+  const octokit = await getOctokitClient()
 
   if (!octokit) return null
   if (!user) return null

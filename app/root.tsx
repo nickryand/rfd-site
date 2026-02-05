@@ -29,6 +29,7 @@ import LoadingBar from './components/LoadingBar'
 import { authenticate, logout } from './services/auth.server'
 import { getSiteConfig } from './services/config.server'
 import { inlineCommentsCookie, themeCookie } from './services/cookies.server'
+import { getGitHubRepoUrl } from './services/github-config.server'
 import { hasGitHubRepoToken as checkGitHubRepoToken } from './services/github-repo-auth.server'
 import { isLocalMode } from './services/rfd.local.server'
 import {
@@ -62,7 +63,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const theme = (await themeCookie.parse(request.headers.get('Cookie'))) ?? 'dark-mode'
   const inlineComments =
     (await inlineCommentsCookie.parse(request.headers.get('Cookie'))) ?? true
-  const githubRepoUrl = `https://${process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'}`
+  const githubRepoUrl = await getGitHubRepoUrl()
 
   const user = await authenticate(request)
   const hasGitHubRepoToken = await checkGitHubRepoToken(request)

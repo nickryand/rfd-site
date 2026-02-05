@@ -44,7 +44,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const callbackUrl = `${url.origin}/auth/github-repo/callback`
 
   // Generate the authorization URL
-  const authUrl = generateGitHubRepoAuthUrl(callbackUrl, state)
+  const authUrl = await generateGitHubRepoAuthUrl(callbackUrl, state)
 
   // Set cookies and redirect
   throw redirect(authUrl, {

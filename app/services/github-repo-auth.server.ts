@@ -6,25 +6,16 @@
  * Copyright Oxide Computer Company
  */
 
+import { getGitHubRepoInfo } from './github-config.server'
 import { sessionStorage } from './session.server'
 
 const GITHUB_REPO_TOKEN_KEY = 'githubRepoToken'
 
 /**
- * Get the GitHub host base URL for OAuth.
- * Handles both github.com and GitHub Enterprise instances.
- */
-function getGitHubHost(): string {
-  const githubHost = process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'
-  const url = new URL(`https://${githubHost}`)
-  return url.host
-}
-
-/**
  * Get the GitHub OAuth authorization URL
  */
-function getGitHubAuthUrl(): string {
-  const host = getGitHubHost()
+async function getGitHubAuthUrl(): Promise<string> {
+  const { host } = await getGitHubRepoInfo()
   if (host === 'github.com') {
     return 'https://github.com/login/oauth/authorize'
   }
@@ -34,8 +25,8 @@ function getGitHubAuthUrl(): string {
 /**
  * Get the GitHub OAuth token URL
  */
-function getGitHubTokenUrl(): string {
-  const host = getGitHubHost()
+async function getGitHubTokenUrl(): Promise<string> {
+  const { host } = await getGitHubRepoInfo()
   if (host === 'github.com') {
     return 'https://github.com/login/oauth/access_token'
   }
@@ -83,7 +74,7 @@ export async function clearGitHubRepoToken(request: Request): Promise<string> {
 /**
  * Configuration for GitHub OAuth
  */
-export function getGitHubRepoOAuthConfig() {
+export async function getGitHubRepoOAuthConfig() {
   const clientId = process.env.GITHUB_REPO_CLIENT_ID
   const clientSecret = process.env.GITHUB_REPO_CLIENT_SECRET
 
@@ -94,8 +85,8 @@ export function getGitHubRepoOAuthConfig() {
   return {
     clientId,
     clientSecret,
-    authorizationUrl: getGitHubAuthUrl(),
-    tokenUrl: getGitHubTokenUrl(),
+    authorizationUrl: await getGitHubAuthUrl(),
+    tokenUrl: await getGitHubTokenUrl(),
     scope: 'repo',
   }
 }
@@ -126,8 +117,8 @@ export function isGitHubRepoOAuthEnabled(): GitHubRepoOAuthStatus {
 /**
  * Generate the OAuth authorization URL for GitHub repo access
  */
-export function generateGitHubRepoAuthUrl(callbackUrl: string, state: string): string {
-  const config = getGitHubRepoOAuthConfig()
+export async function generateGitHubRepoAuthUrl(callbackUrl: string, state: string): Promise<string> {
+  const config = await getGitHubRepoOAuthConfig()
   if (!config) {
     throw new Error('GitHub repo OAuth is not configured')
   }
@@ -149,7 +140,7 @@ export async function exchangeCodeForToken(
   code: string,
   callbackUrl: string,
 ): Promise<string> {
-  const config = getGitHubRepoOAuthConfig()
+  const config = await getGitHubRepoOAuthConfig()
   if (!config) {
     throw new Error('GitHub repo OAuth is not configured')
   }

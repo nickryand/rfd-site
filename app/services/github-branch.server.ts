@@ -8,39 +8,15 @@
 
 import { Octokit } from 'octokit'
 
-/**
- * Parse the GitHub repository info from GITHUB_HOST env var
- */
-export function getGitHubRepoInfo(): { host: string; owner: string; repo: string } {
-  const githubHost = process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'
-  const url = new URL(`https://${githubHost}`)
-  const [, owner, repo] = url.pathname.split('/')
-
-  return {
-    host: url.host,
-    owner,
-    repo,
-  }
-}
-
-/**
- * Get the base URL for GitHub API calls
- */
-function getGitHubApiBaseUrl(): string {
-  const { host } = getGitHubRepoInfo()
-  if (host === 'github.com') {
-    return 'https://api.github.com'
-  }
-  return `https://${host}/api/v3`
-}
+import { getGitHubApiBaseUrl, getGitHubRepoInfo } from './github-config.server'
 
 /**
  * Create an Octokit client with the user's token
  */
-function createOctokitClient(token: string): Octokit {
+async function createOctokitClient(token: string): Promise<Octokit> {
   return new Octokit({
     auth: token,
-    baseUrl: getGitHubApiBaseUrl(),
+    baseUrl: await getGitHubApiBaseUrl(),
   })
 }
 
@@ -56,8 +32,8 @@ export async function createRfdBranch(
   branchName: string,
   baseBranch: string = 'main',
 ): Promise<CreateBranchResult> {
-  const octokit = createOctokitClient(token)
-  const { owner, repo } = getGitHubRepoInfo()
+  const octokit = await createOctokitClient(token)
+  const { owner, repo } = await getGitHubRepoInfo()
 
   try {
     // Get the SHA of the base branch
@@ -113,8 +89,8 @@ export async function createRfdBranch(
  * Check if a branch exists
  */
 export async function branchExists(token: string, branchName: string): Promise<boolean> {
-  const octokit = createOctokitClient(token)
-  const { owner, repo } = getGitHubRepoInfo()
+  const octokit = await createOctokitClient(token)
+  const { owner, repo } = await getGitHubRepoInfo()
 
   try {
     await octokit.rest.git.getRef({
@@ -131,12 +107,12 @@ export async function branchExists(token: string, branchName: string): Promise<b
 /**
  * Generate the GitHub new file URL for creating the RFD README
  */
-export function generateGitHubNewFileUrl(
+export async function generateGitHubNewFileUrl(
   branchName: string,
   rfdNumber: number,
   template: string,
-): string {
-  const { host, owner, repo } = getGitHubRepoInfo()
+): Promise<string> {
+  const { host, owner, repo } = await getGitHubRepoInfo()
   const formattedNumber = rfdNumber.toString().padStart(4, '0')
   const filename = `rfd/${formattedNumber}/README.adoc`
 
