@@ -19,6 +19,7 @@ import type {
 import { ad, attrs } from '~/utils/asciidoctor'
 
 import type { User } from './auth.server'
+import { AuthenticationError } from './rfd.remote.server'
 import {
   fetchLocalRfd,
   fetchLocalRfds,
@@ -139,6 +140,9 @@ export async function fetchRfds(user: User | null): Promise<RfdListItem[] | unde
       return (await fetchRemoteRfds(user)).map(apiRfdMetaToListItem)
     }
   } catch (err) {
+    if (err instanceof AuthenticationError) {
+      throw err
+    }
     console.error('Failed to fetch RFD', err)
     return undefined
   }

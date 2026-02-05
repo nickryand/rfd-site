@@ -28,6 +28,7 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     try {
       // Convert to file:// URL for dynamic import
       const fileUrl = configPath.startsWith('file://') ? configPath : `file://${configPath}`
+      // @ts-expect-error - Dynamic import is supported at runtime by Vite/Deno
       const module = await import(fileUrl)
       cachedConfig = module.default
 

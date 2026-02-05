@@ -64,6 +64,7 @@ RUN deno compile \
 FROM docker.io/debian:12-slim as tools
 
 RUN apt update -y && apt install tini -y
+
 # =============================================================================
 # Stage 3: Create minimal Alpine image
 # =============================================================================

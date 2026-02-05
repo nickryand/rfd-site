@@ -102,6 +102,7 @@ const verify: RfdVerifyCallback<User> = async ({ tokens }) => {
 if (isProviderEnabled('google')) {
   const googleOAuth = new RfdOAuthStrategy(
     {
+      host: getRfdApiUrl(),
       authorizationHost: getRfdApiFrontendUrl(),
       tokenHost: getRfdApiUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',
@@ -118,6 +119,7 @@ if (isProviderEnabled('google')) {
 if (isProviderEnabled('github')) {
   const githubOAuth = new RfdOAuthStrategy(
     {
+      host: getRfdApiUrl(),
       authorizationHost: getRfdApiFrontendUrl(),
       tokenHost: getRfdApiUrl(),
       clientId: process.env.RFD_API_CLIENT_ID || '',

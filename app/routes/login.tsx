@@ -30,6 +30,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url)
   const returnTo = url.searchParams.get('returnTo')
   const emailResponse = url.searchParams.get('email')
+  const expired = url.searchParams.get('expired') === 'true'
 
   // If we're already logged in, just return to the home page. This may occur
   // while navigating back and forward or from their history
@@ -45,7 +46,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const enabledProviders = getEnabledProviders()
-  return data({ emailResponse, enabledProviders }, { headers })
+  return data({ emailResponse, enabledProviders, expired }, { headers })
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -149,6 +150,11 @@ export default function Login() {
         <div className="border-t-secondary absolute bottom-0 h-(--header-height) w-full border-t"></div>
       </div>
       <div className="overlay-shadow bg-raise border-secondary 600:w-[24rem] fixed top-1/2 left-1/2 w-[calc(100%-2.5rem)] -translate-x-1/2 -translate-y-1/2 space-y-3 rounded-lg border p-6 text-center transition-all">
+        {loaderData.expired && (
+          <div className="text-error bg-error-secondary mb-4 rounded p-3 text-left text-sans-sm">
+            Your session has expired. Please sign in again.
+          </div>
+        )}
         {!showEmailForm && (
           <>
             <h1 className="text-sans-2xl text-accent mb-8">Sign in</h1>

@@ -29,6 +29,7 @@ import LoadingBar from './components/LoadingBar'
 import { authenticate, logout } from './services/auth.server'
 import { getSiteConfig } from './services/config.server'
 import { inlineCommentsCookie, themeCookie } from './services/cookies.server'
+import { hasGitHubRepoToken as checkGitHubRepoToken } from './services/github-repo-auth.server'
 import { isLocalMode } from './services/rfd.local.server'
 import {
   fetchRfds,
@@ -64,6 +65,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const githubRepoUrl = `https://${process.env.GITHUB_HOST || 'github.com/oxidecomputer/rfd'}`
 
   const user = await authenticate(request)
+  const hasGitHubRepoToken = await checkGitHubRepoToken(request)
+
   try {
     const rfds = (await fetchRfds(user)) || []
 
@@ -84,11 +87,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       localMode: isLocalMode(),
       newRfdNumber: provideNewRfdNumber([...rfds]),
       githubRepoUrl,
+      hasGitHubRepoToken,
     }
   } catch {
     // The only error that should be caught here is the unauthenticated error.
-    // And if that occurs we need to log the user out
-    await logout(request, '/')
+    // And if that occurs we need to log the user out and redirect to login
+    // with a message so the user knows their session expired.
+    await logout(request, '/login?expired=true')
   }
 
   // Convince remix that a return type will always be provided
@@ -104,6 +109,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     localMode: isLocalMode(),
     newRfdNumber: undefined,
     githubRepoUrl,
+    hasGitHubRepoToken: false,
   }
 }
 
