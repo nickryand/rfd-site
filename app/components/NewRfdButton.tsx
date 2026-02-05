@@ -126,11 +126,7 @@ const NewRfdButton = () => {
       const data = await response.json()
 
       if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = '/login?expired=true'
-          return
-        }
-
+        // Check for GitHub-specific auth errors first (these return 401/403 but need reconnect, not login)
         if (data.code === 'github_auth_required' || data.code === 'auth_error') {
           setFlowState({
             type: 'connecting_github',
@@ -138,6 +134,12 @@ const NewRfdButton = () => {
             formattedNumber,
             isReconnect: data.code === 'auth_error',
           })
+          return
+        }
+
+        // Generic 401 means site session expired (not GitHub token)
+        if (response.status === 401) {
+          window.location.href = '/login?expired=true'
           return
         }
 
