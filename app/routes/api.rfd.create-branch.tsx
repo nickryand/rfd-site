@@ -81,7 +81,12 @@ export async function action({ request }: ActionFunctionArgs) {
       formattedNumber,
     })
   } else {
-    const statusCode = result.code === 'branch_exists' ? 409 : 500
+    let statusCode = 500
+    if (result.code === 'branch_exists') {
+      statusCode = 409
+    } else if (result.code === 'auth_error') {
+      statusCode = 401
+    }
     return data(
       {
         error: result.error,

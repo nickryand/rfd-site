@@ -20,7 +20,7 @@ type FlowState =
   | { type: 'idle' }
   | { type: 'loading' }
   | { type: 'confirming'; nextNumber: number; formattedNumber: string }
-  | { type: 'connecting_github'; nextNumber: number; formattedNumber: string }
+  | { type: 'connecting_github'; nextNumber: number; formattedNumber: string; isReconnect?: boolean }
   | { type: 'creating'; nextNumber: number; formattedNumber: string }
   | { type: 'done'; branchName: string; branchUrl: string }
   | { type: 'error'; message: string; canRetry: boolean }
@@ -110,6 +110,7 @@ const NewRfdButton = () => {
         type: 'connecting_github',
         nextNumber: rfdNumber,
         formattedNumber,
+        isReconnect: false,
       })
       return
     }
@@ -130,11 +131,12 @@ const NewRfdButton = () => {
           return
         }
 
-        if (data.code === 'github_auth_required') {
+        if (data.code === 'github_auth_required' || data.code === 'auth_error') {
           setFlowState({
             type: 'connecting_github',
             nextNumber: rfdNumber,
             formattedNumber,
+            isReconnect: data.code === 'auth_error',
           })
           return
         }
@@ -214,6 +216,7 @@ const NewRfdButton = () => {
             <ConnectGitHubState
               formattedNumber={flowState.formattedNumber}
               returnTo={appendParam(location.pathname + location.search, 'create_rfd', '1')}
+              isReconnect={flowState.isReconnect}
             />
           )}
 
@@ -330,15 +333,22 @@ function ConfirmingState({
 function ConnectGitHubState({
   formattedNumber,
   returnTo,
+  isReconnect,
 }: {
   formattedNumber: string
   returnTo: string
+  isReconnect?: boolean
 }) {
   return (
     <div>
+      {isReconnect && (
+        <p className="text-notice bg-notice-secondary mb-4 rounded p-2 text-sans-sm">
+          Your GitHub connection has expired or been revoked. Please reconnect to continue.
+        </p>
+      )}
       <p className="mb-4">
         To create branch <code className="bg-raise border-secondary rounded border px-1 py-0.5">rfd-{formattedNumber}</code>,
-        you need to connect your GitHub account with repository access.
+        you need to {isReconnect ? 'reconnect' : 'connect'} your GitHub account with repository access.
       </p>
       <p className="text-tertiary text-sans-sm mb-6">
         This grants temporary access to create branches in the RFD repository.
@@ -352,7 +362,7 @@ function ConnectGitHubState({
             type="submit"
             className={buttonStyle({ size: 'sm' })}
           >
-            Connect GitHub
+            {isReconnect ? 'Reconnect GitHub' : 'Connect GitHub'}
           </button>
         </div>
       </Form>
