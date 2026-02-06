@@ -9,7 +9,6 @@
 import { redirect, type LoaderFunctionArgs } from 'react-router'
 
 import { returnToCookie } from '~/services/cookies.server'
-import { checkRepoPermissions } from '~/services/github-branch.server'
 import {
   exchangeCodeForToken,
   isGitHubRepoOAuthEnabled,
@@ -59,20 +58,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     // Store the token in session
     const { cookie } = await setGitHubRepoToken(request, accessToken)
 
-    // Check permissions before redirecting - warn user if they lack push access
-    const permissionResult = await checkRepoPermissions(accessToken)
-
     // Get return URL
     const returnTo = (await returnToCookie.parse(request.headers.get('Cookie'))) || '/'
 
-    // If user authenticated but lacks push access, append warning param
-    let finalReturnTo = returnTo
-    if (permissionResult.hasAccess && !permissionResult.canPush) {
-      const separator = returnTo.includes('?') ? '&' : '?'
-      finalReturnTo = `${returnTo}${separator}github_no_push=1`
-    }
-
-    throw redirect(finalReturnTo, {
+    throw redirect(returnTo, {
       headers: [
         ['Set-Cookie', cookie],
         ['Set-Cookie', await returnToCookie.serialize('', { maxAge: 0 })],

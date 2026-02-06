@@ -56,16 +56,32 @@ const NewRfdButton = () => {
       const data = await response.json()
 
       if (!response.ok) {
-        if (response.status === 401) {
-          window.location.href = '/login?expired=true'
-          return
+        switch (data.code) {
+          case 'permission_denied':
+            setFlowState({
+              type: 'permission_denied',
+              message: data.error,
+            })
+            return
+          case 'auth_error':
+            setFlowState({
+              type: 'connecting_github',
+              nextNumber: 0,
+              formattedNumber: '0000',
+              isReconnect: true,
+            })
+            return
+          case 'session_expired':
+            window.location.href = '/login?expired=true'
+            return
+          default:
+            setFlowState({
+              type: 'error',
+              message: data.error || 'Failed to get next RFD number',
+              canRetry: true,
+            })
+            return
         }
-        setFlowState({
-          type: 'error',
-          message: data.error || 'Failed to get next RFD number',
-          canRetry: true,
-        })
-        return
       }
 
       setEditableNumber(data.nextNumber)
@@ -96,24 +112,6 @@ const NewRfdButton = () => {
       handleButtonClick()
     }
   }, [searchParams, setSearchParams, handleButtonClick])
-
-  // Handle permission denied warning from pre-flight check
-  const noPushCheckedRef = useRef(false)
-  useEffect(() => {
-    if (searchParams.get('github_no_push') === '1' && !noPushCheckedRef.current) {
-      noPushCheckedRef.current = true
-      setSearchParams((prev) => {
-        prev.delete('github_no_push')
-        return prev
-      }, { replace: true })
-
-      dialog.show()
-      setFlowState({
-        type: 'permission_denied',
-        message: 'Your GitHub account does not have write access to the RFD repository.',
-      })
-    }
-  }, [searchParams, setSearchParams, dialog])
 
   const handleCreateBranch = useCallback(async () => {
     if (flowState.type !== 'confirming' && flowState.type !== 'connecting_github') {
