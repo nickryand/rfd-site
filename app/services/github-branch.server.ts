@@ -22,7 +22,42 @@ async function createOctokitClient(token: string): Promise<Octokit> {
 
 export type CreateBranchResult =
   | { success: true; branchName: string }
-  | { success: false; error: string; code?: 'branch_exists' | 'api_error' | 'auth_error' }
+  | { success: false; error: string; code?: 'branch_exists' | 'api_error' | 'auth_error' | 'permission_denied' }
+
+export type PermissionCheckResult =
+  | { hasAccess: true; canPush: boolean }
+  | { hasAccess: false; reason: 'token_invalid' | 'no_access' }
+
+/**
+ * Check if the token has push permissions to the repository
+ */
+export async function checkRepoPermissions(token: string): Promise<PermissionCheckResult> {
+  const octokit = await createOctokitClient(token)
+  const { owner, repo } = await getGitHubRepoInfo()
+
+  try {
+    const { data } = await octokit.rest.repos.get({ owner, repo })
+    const permissions = data.permissions
+    if (!permissions) {
+      return { hasAccess: true, canPush: false }
+    }
+    return {
+      hasAccess: true,
+      canPush: permissions.push === true || permissions.admin === true,
+    }
+  } catch (error) {
+    if (error instanceof Error && 'status' in error) {
+      if ((error as { status: number }).status === 401) {
+        return { hasAccess: false, reason: 'token_invalid' }
+      }
+      if ((error as { status: number }).status === 403 || (error as { status: number }).status === 404) {
+        return { hasAccess: false, reason: 'no_access' }
+      }
+    }
+    // Unknown error - assume access for now, actual operation will fail with details
+    return { hasAccess: true, canPush: false }
+  }
+}
 
 /**
  * Create a new branch for an RFD
@@ -64,11 +99,25 @@ export async function createRfdBranch(
           code: 'branch_exists',
         }
       }
-      if ('status' in error && (error.status === 401 || error.status === 403)) {
+      if ('status' in error && error.status === 401) {
         return {
           success: false,
-          error: 'GitHub authentication failed. Please reconnect your GitHub account.',
+          error: 'GitHub authentication expired. Please reconnect your GitHub account.',
           code: 'auth_error',
+        }
+      }
+      if ('status' in error && error.status === 403) {
+        return {
+          success: false,
+          error: 'You do not have write access to the RFD repository. Please contact a repository administrator.',
+          code: 'permission_denied',
+        }
+      }
+      if ('status' in error && error.status === 404) {
+        return {
+          success: false,
+          error: 'You do not have access to the RFD repository. The repository may be private or you may need to be added as a collaborator.',
+          code: 'permission_denied',
         }
       }
       return {

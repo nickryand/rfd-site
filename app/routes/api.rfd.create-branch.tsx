@@ -86,6 +86,8 @@ export async function action({ request }: ActionFunctionArgs) {
       statusCode = 409
     } else if (result.code === 'auth_error') {
       statusCode = 401
+    } else if (result.code === 'permission_denied') {
+      statusCode = 403
     }
     return data(
       {

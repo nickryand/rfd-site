@@ -24,6 +24,7 @@ type FlowState =
   | { type: 'creating'; nextNumber: number; formattedNumber: string }
   | { type: 'done'; branchName: string; branchUrl: string }
   | { type: 'error'; message: string; canRetry: boolean }
+  | { type: 'permission_denied'; message: string }
 
 const NewRfdButton = () => {
   const dialog = useDialogStore()
@@ -96,6 +97,24 @@ const NewRfdButton = () => {
     }
   }, [searchParams, setSearchParams, handleButtonClick])
 
+  // Handle permission denied warning from pre-flight check
+  const noPushCheckedRef = useRef(false)
+  useEffect(() => {
+    if (searchParams.get('github_no_push') === '1' && !noPushCheckedRef.current) {
+      noPushCheckedRef.current = true
+      setSearchParams((prev) => {
+        prev.delete('github_no_push')
+        return prev
+      }, { replace: true })
+
+      dialog.show()
+      setFlowState({
+        type: 'permission_denied',
+        message: 'Your GitHub account does not have write access to the RFD repository.',
+      })
+    }
+  }, [searchParams, setSearchParams, dialog])
+
   const handleCreateBranch = useCallback(async () => {
     if (flowState.type !== 'confirming' && flowState.type !== 'connecting_github') {
       return
@@ -126,7 +145,16 @@ const NewRfdButton = () => {
       const data = await response.json()
 
       if (!response.ok) {
-        // Check for GitHub-specific auth errors first (these return 401/403 but need reconnect, not login)
+        // Check for permission denied first (user authenticated but lacks write access)
+        if (data.code === 'permission_denied') {
+          setFlowState({
+            type: 'permission_denied',
+            message: data.error,
+          })
+          return
+        }
+
+        // Check for GitHub-specific auth errors (these return 401/403 but need reconnect, not login)
         if (data.code === 'github_auth_required' || data.code === 'auth_error') {
           setFlowState({
             type: 'connecting_github',
@@ -239,6 +267,13 @@ const NewRfdButton = () => {
               message={flowState.message}
               canRetry={flowState.canRetry}
               onRetry={handleButtonClick}
+              onClose={() => dialog.hide()}
+            />
+          )}
+
+          {flowState.type === 'permission_denied' && (
+            <PermissionDeniedState
+              message={flowState.message}
               onClose={() => dialog.hide()}
             />
           )}
@@ -456,6 +491,35 @@ function ErrorState({
             Retry
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+function PermissionDeniedState({
+  message,
+  onClose,
+}: {
+  message: string
+  onClose: () => void
+}) {
+  return (
+    <div>
+      <div className="mb-4 flex items-start gap-2">
+        <Icon name="error" size={16} className="text-error mt-0.5 shrink-0" />
+        <div>
+          <p className="text-error font-medium mb-2">Repository Access Required</p>
+          <p className="text-secondary text-sans-sm">{message}</p>
+        </div>
+      </div>
+      <p className="text-tertiary text-sans-sm mb-6">
+        To create RFDs, you need write access to the repository. This is typically granted by
+        adding you as a collaborator or team member with push permissions.
+      </p>
+      <div className="flex justify-end">
+        <button onClick={onClose} className={buttonStyle({ size: 'sm' })}>
+          Close
+        </button>
       </div>
     </div>
   )
